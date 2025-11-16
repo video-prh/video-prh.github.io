@@ -304,8 +304,10 @@
         <h3 class="title is-4">Predictable Scaling at Test Time</h3>
         <div class="content has-text-justified">
           <p>This relationship between test-time data and alignment is so consistent that we can model it with a "scaling law." We found that a saturation-based model fits our observations remarkably well:</p>
-          <p style="text-align: center;">$$ \text{score}(n_f, n_c) = S_{\infty} - (C_f n_f^{-\alpha} + C_c n_c^{-\beta}) $$</p>
-          <p>Here, $n_f$ and $n_c$ are the number of frames and captions. The formula suggests that alignment approaches a maximum, "infinite data" score ($S_{\infty}$) as we add more data. The score is penalized by two terms that decay with the number of frames ($C_f n_f^{-\alpha}$) and captions ($C_c n_c^{-\beta}$). This model fits our empirical data with high fidelity (e.g., $R^2 > 0.97$ for VideoMAEv2), demonstrating that the benefit of additional test-time data is predictable. This is conceptually similar to scaling laws for model training, but applied for the first time to inference.</p>
+          <p style="text-align: center;">$$ \text{score}(\mathbf{n}_f, \mathbf{n}_c) = S_{\infty} - (C_f \mathbf{n}_f^{-\alpha} + C_c \mathbf{n}_c^{-\beta}) $$</p>
+          <p>Here, $\mathbf{n}_f$ and $\mathbf{n}_c$ are the number of frames and captions. The formula suggests that alignment approaches a maximum, "infinite data" score ($S_{\infty}$) as we add more data. 
+            The score is penalized by two terms that decay with the number of frames ($C_f \mathbf{n}_f^{-\alpha}$) and captions ($C_c \mathbf{n}_c^{-\beta}$). 
+            This model fits our empirical data with high fidelity (e.g., $R^2 > 0.97$ for VideoMAEv2), demonstrating that the benefit of additional test-time data is predictable. This is conceptually similar to scaling laws for model training, but applied for the first time to inference.</p>
         </div>
       </div>
     </div>
