@@ -566,16 +566,8 @@
       <div class="column is-full-width">
         <h2 class="title is-3">Conclusion</h2>
         <div class="content has-text-justified">
-          <p>Our work presents the first comprehensive study of emergent alignment between video and text representations, extending the Platonic Representation Hypothesis to the dynamic world of video. Our key takeaways are:</p>
-          <ol>
-            <li><strong>Test-time data matters:</strong> Richer visual and textual data at inference time significantly boosts alignment. This holds for both the number of video frames and the number of diverse captions.</li>
-            <li><strong>Temporal understanding is still developing:</strong> While dynamic inputs improve alignment, current models show only a minor sensitivity to temporal reordering of events, indicating significant room for growth in temporal reasoning.</li>
-            <li><strong>Predictable scaling:</strong> This relationship follows predictable scaling laws, which can help in designing data collection and model evaluation strategies.</li>
-            <li><strong>Alignment as a proxy for quality:</strong> Stronger alignment with text is a good indicator of a video model's general-purpose representation capabilities, across both semantic and geometric tasks.</li>
-          </ol>
-          <p>Overall, we introduce video-text alignment as an informative, zero-shot way to probe the representation power of different encoders for spatio-temporal data. The temporal dimension in video appears to provide a powerful signal for grounding semantics, opening up exciting avenues for future research in multimodal learning and in developing more temporally-aware models.
-            An interesting direction for future work is to extend such analysis to generative and tracking models, as their representations aren't as easily accessible as general representations.
-          </p>
+          <p>In this work, we extend the Platonic Representation Hypothesis to the temporal domain, demonstrating that video-text alignment scores can double simply by using more video frames and diverse captions at test time—without any retraining. We quantify this with a highly accurate saturation-based scaling law, confirming that native video models are better equipped to leverage temporal information than static encoders.</p>
+          <p>Our analysis reveals that this alignment score is a powerful zero-shot indicator of a model's downstream performance on both semantic and geometric tasks. However, it also highlights the limitations of current video models, some of which are still outperformed by simpler frame-averaging approaches. As video models continue to evolve, particularly generative ones, an open question remains: how can we best harness their latent representations for a deeper understanding of our dynamic world?</p>
         </div>
       </div>
     </div>
