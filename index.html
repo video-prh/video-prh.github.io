@@ -25,11 +25,11 @@
   <link rel="stylesheet" href="./static/css/index.css">
   <link rel="icon" href="./static/images/favicon.svg">
 
-  <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/bulma-carousel.min.js"></script>
   <script src="./static/js/bulma-slider.min.js"></script>
-  <script src="./static/js/index.js"></script> -->
+  <script src="./static/js/index.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.25/dist/katex.min.css" integrity="sha384-WcoG4HRXMzYzfCgiyfrySxx90XSl2rxY5mnVY5TwtWE6KLrArNKn0T/mOgNL0Mmi" crossorigin="anonymous">
 
   <!-- The loading of KaTeX is deferred to speed up page rendering -->
@@ -54,7 +54,34 @@
           throwOnError : false
         });
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      bulmaCarousel.attach('#image-carousel', {
+          slidesToScroll: 1,
+          slidesToShow: 1,
+          loop: true,
+          autoplay: false,
+      });
+    });
 </script>
+<style>
+    .results-carousel .carousel-nav {
+        top: calc(50% + 2rem); /* Move arrows down */
+    }
+    .results-carousel .carousel-nav.is-left {
+        left: -6rem; /* Move left arrow further out */
+    }
+    .results-carousel .carousel-nav.is-right {
+        right: -6rem; /* Move right arrow further out */
+    }
+    .carousel .carousel-pagination {
+        margin-top: 8rem; /* Add space between image and pagination dots */
+    }
+    .results-carousel .item {
+        border: none !important;
+        box-shadow: none !important;
+    }
+</style>
 
 </head>
 <body>
@@ -248,7 +275,7 @@
           </div>
           <div class="box has-text-centered has-background-info-light">
             <p>
-              Neural networks, trained with different objectives on different data and modalities, are converging to a <b>shared</b> statistical model of reality in their representation spaces.
+              Neural networks, trained with different objectives on different data and modalities, are converging to a <b>shared</b> statistical model of reality in their representation spaces. - <i>Huh et al. 2024</i>.
             </p>
           </div>
 
@@ -263,7 +290,7 @@
           </p>
 
           <p>
-            Our work addresses this resoundingly, showing that alignment for the exact same models can almost double by considering <i>dynamic inputs</i>, which more accurately reflect the true underlying representation from the real world. 
+            Our work addresses this resoundingly, showing that alignment for the exact same models can almost double by considering <i>dynamic inputs</i>, and achieve nearly 0.40 for video models, which more accurately reflect the true underlying representation from the real world. 
             Strong alignment was in these models all along; the data was just too impoverished to reveal it!
           </p>
 
@@ -274,6 +301,11 @@
         <div class="content has-text-justified">
           <p>
             To quantify how "similar" two representation spaces are, we need a metric that can compare their geometric structures without requiring them to be in the same coordinate system. We use a method called <strong>Mutual $k$-Nearest Neighbors (k-NN) Alignment</strong>. The intuition is simple: if two spaces are well-aligned, then points that are close to each other in one space should also be close to each other in the other space.
+          </p>
+
+          <p>
+            While the spaces need not be in the same coordinate system, we need a dataset of paired video and text captions to link the two modalities together. 
+            We utilize two datasets of 1024 pairs: the VaTeX dataset, consisting of 10-second YouTube clips captioned by 10 different English annotators, and the Perception Encoder Video Dataset (PVD) (<a href="#vatex">[3]</a>, <a href="#pvd">[4]</a>).
           </p>
         </div>
 
@@ -291,7 +323,7 @@
         <div class="content has-text-justified">
           <p>Here's how it works for a dataset of paired videos and text captions:</p>
           <ol>
-            <li>We encode all videos using a vision model and all captions using a text model, creating two distinct embedding spaces.</li>
+            <li>We encode all videos using a vision model and all captions using a text model, sampling varying amounts of information from each input.</li>
             <li>In each space, we build a nearest-neighbor graph, where each item (a video or caption) is connected to its $k$ closest neighbors.</li>
             <li>The alignment score is the fraction of edges that are shared between the two graphs. For example, if video A is a neighbor of video B, is caption A also a neighbor of caption B?</li>
           </ol>
@@ -299,7 +331,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </section>
 
@@ -310,44 +341,103 @@
       <div class="column is-full-width">
         <h2 class="title is-3">Video Representations are Strongly Aligned with Text</h2>
          <div class="content has-text-justified">
-          <!-- <p>
-            Our first major finding is that video-text alignment is highly dependent on the amount of data provided at <em>test time</em>. We found this to be true for both the visual (number of frames) and textual (number of captions) data. This "test-time scaling" effect is surprisingly strong and consistent.
-          </p> -->
-         </div>
+          <p>
+            We first measure alignment of various video models against Gemma-2 9B-IT on the VaTeX dataset below. 
+            We test video models in three different settings.
+            For image models, we consider two variants
+            <ul>
+              <li>
+                We simply use a single (first) frame, denoted as <i>image model on image</i> 🟩.
+              </li>
+              <li>
+                To introduce naive temporal dynamics, we averaged the image features across 8 frames in the temporal dimension. We denote the resulting method as <i>image model on video</i> ⚠️.
+              </li>
+            </ul>
+            We also consider models trained on videos and adapt their native resolution 🔵.
+            We found the following results: 
+            <ul>
+              <li>
+                Pure image-only models (🟩) have less than 20% alignment on VaTeX, in line with the setting in Huh et. al. 2024.
+              </li>
+              <li>
+                The strongest and most aligned models are video models (🔵) (especially the self-supervised VideoMAEv2).
+              </li>
+              <li>
+                Frame averaging image models is an effective baseline (🟩 -> ⚠️), especially for the motion-intensive SSv2 dataset.
+              </li>
+              <li>
+                Recent, stronger LLMs (Gemma-2) are better aligned with visual models than weaker ones (Llama, Gemma-1).
+              </li>
+            </ul>
+          </p>
+        </div>
       </div>
     </div>
-    <div class="is-centered">
-        <div class="column has-text-centered">
-        <img src="static/images/alignment_k400_ssv2_side_by_side.png"
-        width="80%"
-        center
-        alt="Alignment scaling with frames and captions."/>
-        <!-- style="border: 1px solid rgba(0, 0, 0, 0.2);" -->
+    <div class="column is-full-width">
+      <div id="image-carousel" class="carousel results-carousel" style="width: 90%; margin: auto;">
+        <div class="item">
+          <img src="static/images/mainfig-1.png" alt="Main figure 1">
+          <h3 class="subtitle has-text-centered is-6">Our work shows that as video representations become stronger, they become more closely aligned with text.
+            <!-- We find that large video models (🔵) and image models that average over frames (⚠️) achieve the highest alignment and downstream performance, outperforming simple image-only models (🟩️). -->
+          </h3>
+          <p></p>
+        </div>
+        <div class="item">
+          <img src="static/images/mainfig-2.png" alt="Main figure 2">
+          <h3 class="subtitle has-text-centered is-6">Pure image-only models (🟩) have less than 20% alignment on VaTeX, in line with the setting in Huh et. al. 2024.</h3>
+        </div>
+        <div class="item">
+          <img src="static/images/mainfig-3.png" alt="Main figure 3">
+          <h3 class="subtitle has-text-centered is-6">The strongest and most aligned models are video models (🔵) (especially the self-supervised VideoMAEv2).</h3>
+        </div>
+        <div class="item">
+          <img src="static/images/mainfig-4.png" alt="Main figure 4">
+          <h3 class="subtitle has-text-centered is-6">Frame averaging image models is an effective baseline (🟩 -> ⚠️), especially for the motion-intensive SSv2 dataset.
+          </h3>
+        </div>
+        <div class="item">
+          <img src="static/images/mainfig-5.png" alt="Main figure 5">
+          <h3 class="subtitle has-text-centered is-6">Recent, stronger LLMs (Gemma-2) are better aligned with visual models than weaker ones (Llama, Gemma-1).</h3>
+        </div>
+      </div>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <div class="content has-text-justified">
+          <p>
+            In the original PRH paper, the authors postulate the following claim:
+          </p>
+          <div class="box has-text-centered has-background-info-light">
+            <p>
+              Different models will converge to the same representation when the <span style="color: red;">input signals are sufficiently high information</span> and the models are sufficiently high capacity. - <i>Huh et. al., 2024</i>. 
+            </p>
+          </div>
+          <p>
+            Our results above reinforce that the previously observed low alignment was a result of the <b>input signals</b> being too impoverished, and that these models were sufficiently high capacity to begin with!
+          </p>
+        </div>
+        <h3 class="title is-4">Embeddings are not Temporally Sensitive Yet</h3>
+        <div class="content has-text-justified">
+          <p>Seeing as we have dynamic inputs now, we can evaluate how dynamic our representations are. 
+            We evaluate this on two datasets: the synthetic <i>Test of Time</i> and the challenging, long-form <i>VideoComp</i>.
+            On this second dataset, when we compute alignment against positive captions vs. temporally reordered negatives in text space, it drops slightly but not by much. 
+            This shows that there is still room for greater temporal understanding in our embeddings.  
+          </p>
+        </div>
+        <div class="columns is-centered is-vcentered">
+          <div class="column is-two-fifths">
+            <img src="static/images/videocomp-sample.png" alt="Sample from VideoComp dataset."/>
+          </div>
+          <div class="column is-three-fifths">
+            <img src="static/images/videocomp_pos_neg_tempreorder.png"
+            alt="Video embeddings are sensitive to temporal caption reordering on VideoComp."/>
+          </div>
         </div>
         <h3 class="subtitle has-text-centered is-6">
-        Alignment scales with the number of frames (left) and captions (right) at test time. Video models (like VideoMAEv2) benefit more from extra frames than image models (like DINOv2).
+          (Left) A sample from the VideoComp dataset <a href="#videocomp">[5]</a>. (Right) Video embeddings are sensitive to temporal caption reordering.
         </h3>
-    </div>
-    <!-- <div class="columns is-centered">
-      <div class="column is-full-width">
-         <div class="content has-text-justified">
-          <p>
-            As shown above, increasing the number of frames from a video consistently improves alignment. This makes sense: more frames provide a richer temporal context. Interestingly, dedicated video models like VideoMAEv2 benefit much more from additional frames than image models applied to video, like DINOv2.
-          </p>
-          <p>
-            Perhaps more surprisingly, using more captions for the same video also provides a significant boost. On the VaTeX dataset, which has 10 different human-written captions per video, we found that using all 10 captions improves alignment by 60% on average compared to using just one. This suggests that the diversity of language in multiple descriptions helps to ground the visual concepts more robustly. We even found that using an LLM to generate multiple synthetic captions from a single detailed one can improve alignment over using the original caption alone.
-          </p>
-         </div>
-        <h3 class="title is-4">Predictable Scaling at Test Time</h3>
-        <div class="content has-text-justified">
-          <p>This relationship between test-time data and alignment is so consistent that we can model it with a "scaling law." We found that a saturation-based model fits our observations remarkably well:</p>
-          <p style="text-align: center;">$$ \text{score}(\mathbf{n}_f, \mathbf{n}_c) = S_{\infty} - (C_f \mathbf{n}_f^{-\alpha} + C_c \mathbf{n}_c^{-\beta}) $$</p>
-          <p>Here, $\mathbf{n}_f$ and $\mathbf{n}_c$ are the number of frames and captions. The formula suggests that alignment approaches a maximum, "infinite data" score ($S_{\infty}$) as we add more data. 
-            The score is penalized by two terms that decay with the number of frames ($C_f \mathbf{n}_f^{-\alpha}$) and captions ($C_c \mathbf{n}_c^{-\beta}$). 
-            This model fits our empirical data with high fidelity (e.g., $R^2 > 0.97$ for VideoMAEv2), demonstrating that the benefit of additional test-time data is predictable. This is conceptually similar to scaling laws for model training, but applied for the first time to inference.</p>
-        </div>
       </div>
-    </div> -->
+    </div>
   </div>
 </section>
 
@@ -355,10 +445,16 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">Key Result 1: More Data at Test Time = Better Alignment</h2>
+        <h2 class="title is-3">Scaling Properties of Videos and Text</h2>
          <div class="content has-text-justified">
           <p>
-            Our first major finding is that video-text alignment is highly dependent on the amount of data provided at <em>test time</em>. We found this to be true for both the visual (number of frames) and textual (number of captions) data. This "test-time scaling" effect is surprisingly strong and consistent.
+            We find that video-text alignment can improve dramatically depending on the amount of data provided at <em>test time</em>. 
+          </p>
+
+          <p>
+            As shown below, increasing the number of frames sampled from the video consistently improves alignment, as does increasing the number of captions.
+            This makes sense: the more dynamic our inputs, the less we are approximating the true underlying reality. 
+            Scaling frames benefits video models like VideoMAEv2 more than image models like DINOv2. 
           </p>
          </div>
       </div>
@@ -368,30 +464,54 @@
         <img src="static/images/vatex_scaling_side_by_side_enhanced.png"
         width="80%"
         center
-        style="border: 1px solid rgba(0, 0, 0, 0.2);"
         alt="Alignment scaling with frames and captions."/>
         </div>
         <h3 class="subtitle has-text-centered is-6">
         Alignment scales with the number of frames (left) and captions (right) at test time. Video models (like VideoMAEv2) benefit more from extra frames than image models (like DINOv2).
         </h3>
+        <p></p>
     </div>
     <div class="columns is-centered">
       <div class="column is-full-width">
          <div class="content has-text-justified">
           <p>
-            As shown above, increasing the number of frames from a video consistently improves alignment. This makes sense: more frames provide a richer temporal context. Interestingly, dedicated video models like VideoMAEv2 benefit much more from additional frames than image models applied to video, like DINOv2.
+            We found that even <i>artificially synthesized</i> caption descriptions from a single long video caption using an LLM can obtain alignment that is higher than that of the source caption.
+            We turn the  
+            Namely, we find that our test time scaling approach improves alignment on the PVD dataset, which does not naturally come with multiple diverse captions, across a wide variety of models.
           </p>
+        </div> 
+      </div>
+    </div>
+    <div class="is-centered">
+        <div class="column has-text-centered">
+        <img src="static/images/pvd_scaling_linspace_center.png"
+        width="80%"
+        center
+        alt="Alignment scaling with frames and captions for PVD."/>
+        </div>
+        <h3 class="subtitle has-text-centered is-6">
+        Alignment scales with the number of frames (left) and captions (right) at test time. Video models (like VideoMAEv2) benefit more from extra frames than image models (like DINOv2).
+        </h3>
+        <p></p>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+         <div class="content has-text-justified">
           <p>
-            Perhaps more surprisingly, using more captions for the same video also provides a significant boost. On the VaTeX dataset, which has 10 different human-written captions per video, we found that using all 10 captions improves alignment by 60% on average compared to using just one. This suggests that the diversity of language in multiple descriptions helps to ground the visual concepts more robustly. We even found that using an LLM to generate multiple synthetic captions from a single detailed one can improve alignment over using the original caption alone.
+            We can quantify this dependence using neural scaling laws similar to the ones proposed in the Chinchilla paper <a href="chinchilla">[6]</a>. 
+            We found that a saturation-based model fits our observations remarkably well:
           </p>
-         </div>
-        <h3 class="title is-4">Predictable Scaling at Test Time</h3>
-        <div class="content has-text-justified">
-          <p>This relationship between test-time data and alignment is so consistent that we can model it with a "scaling law." We found that a saturation-based model fits our observations remarkably well:</p>
           <p style="text-align: center;">$$ \text{score}(\mathbf{n}_f, \mathbf{n}_c) = S_{\infty} - (C_f \mathbf{n}_f^{-\alpha} + C_c \mathbf{n}_c^{-\beta}) $$</p>
-          <p>Here, $\mathbf{n}_f$ and $\mathbf{n}_c$ are the number of frames and captions. The formula suggests that alignment approaches a maximum, "infinite data" score ($S_{\infty}$) as we add more data. 
+          <p>
+            Here, $\mathbf{n}_f$ and $\mathbf{n}_c$ are the number of frames and captions. The formula suggests that alignment approaches a maximum, "infinite data" score ($S_{\infty}$) as we add more data. 
             The score is penalized by two terms that decay with the number of frames ($C_f \mathbf{n}_f^{-\alpha}$) and captions ($C_c \mathbf{n}_c^{-\beta}$). 
-            This model fits our empirical data with high fidelity (e.g., $R^2 > 0.97$ for VideoMAEv2), demonstrating that the benefit of additional test-time data is predictable. This is conceptually similar to scaling laws for model training, but applied for the first time to inference.</p>
+            This model fits our empirical data with high fidelity (e.g., $R^2 > 0.97$ for VideoMAEv2), demonstrating that the benefit of additional test-time data is predictable.
+          </p>
+          <p style="text-align: center;">$$ \text{VideoMAEv2}_{\text{score}}(\mathbf{n}_f,\mathbf{n}_c) = 0.41 - (0.15\mathbf{n}_f^{-0.75} + 0.13\mathbf{n}_c^{-1.30}) $$</p>
+          <p style="text-align: center;">$$ \text{DINOv2}_{\text{score}}(\mathbf{n}_f,\mathbf{n}_c) = 0.37 - (0.05\mathbf{n}_f^{-1.76} + 0.13\mathbf{n}_c^{-1.40}) $$</p>
+          <p>
+            These fitted parameters provide insight into each model's unique behaviors. Notably, the frame exponent ($\alpha$) for DINOv2 is over double that of VideoMAEv2, while the caption coefficients and exponents ($C_c, \beta$) remain comparable, highlighting the video model's stronger ability to leverage temporal information from additional frames to improve alignment.
+          </p> 
         </div>
       </div>
     </div>
@@ -402,24 +522,12 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">The Power of Temporal Dynamics</h2>
+        <h2 class="title is-3">Alignment as a Zero-Shot Video Probe</h2>
         <div class="content has-text-justified">
-          <p>A key question is whether dedicated video models, which are designed to understand temporal dynamics, show better emergent alignment than powerful image models simply applied frame-by-frame. Our results suggest they do.</p>
-          <p>When we provide only a single frame from a video, top-tier image models like DINOv2 often show stronger alignment than video models. This is expected, as they are specialists in static scenes. However, as we increase the number of frames, the picture changes dramatically. Video models like VideoMAEv2 show a much steeper improvement in alignment score as more frames are added. Their ability to process spatio-temporal information allows them to build a more comprehensive and semantically rich representation that aligns better with language.</p>
-          <p>This suggests that the temporal dynamics in video are not just noise, but a powerful signal for grounding semantics. Learning about motion, causality, and object interactions over time appears to help models build an internal structure that is more congruent with the concepts expressed in natural language. We also tested this on datasets designed to probe temporal understanding, like Test of Time and VideoComp, and found that while current models show some sensitivity to temporal order, there is still significant room for improvement.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="container is-max-desktop">
-    <div class="columns is-centered">
-      <div class="column is-full-width">
-        <h2 class="title is-3">Key Result 2: Alignment is a Proxy for Model Quality</h2>
-        <div class="content has-text-justified">
-          <p>If this emergent alignment is meaningful, it should correlate with how well a video model performs on other tasks. We tested this by comparing the alignment scores of various self-supervised video models (trained without text) to their performance on a range of downstream tasks.</p>
+          <p>
+            If this emergent alignment is meaningful, it should correlate with how well a video model performs on other video tasks. 
+            We tested this by comparing the alignment scores of various self-supervised video models (trained without text) to their performance on a range of downstream tasks, from semantic to low-level geometric tasks.
+          </p>
         </div>
       </div>
     </div>
@@ -428,18 +536,24 @@
             <img src="static/images/corr_downstream_subset.png"
             width="80%"
             center
-            style="border: 1px solid rgba(0, 0, 0, 0.2);"
             alt="Correlation between alignment and downstream task performance."/>
         </div>
         <h3 class="subtitle has-text-centered is-6">
             Stronger video-text alignment correlates with better performance on both semantic (action classification) and geometric (tracking, depth) downstream tasks.
         </h3>
+        <p></p>
     </div>
     <div class="columns is-centered">
       <div class="column is-full-width">
         <div class="content has-text-justified">
-          <p>As shown above, we found a strong positive correlation. Models that align better with text also tend to perform better on semantic tasks like action classification (on datasets like Kinetics and SSv2) and, surprisingly, even on non-semantic, geometric tasks like depth estimation, camera pose estimation, and object tracking.</p>
-          <p>This is a crucial finding. It suggests that video-text alignment can serve as a powerful, zero-shot indicator of a video model's general capabilities. Evaluating large video models is notoriously expensive, often requiring extensive fine-tuning on multiple benchmarks. Our alignment metric provides a cheap and fast alternative: simply by measuring how well a video model's representations align with a standard text model, we can get a strong signal about its potential performance on a wide array of tasks, saving significant time and computational resources.</p>
+          <p>
+            As shown above, we found a strong positive correlation. 
+            Models that align better with text also tend to perform better on semantic tasks like action classification (on datasets like Kinetics and SSv2) and, surprisingly, even on non-semantic, geometric tasks like depth estimation, camera pose estimation, and object tracking.
+            Point tracking remains an outlier, pointing to more room for video models to improve in.
+          </p>
+          <p>
+            This suggests that video-text alignment can serve as a powerful, zero-shot indicator of a video model's general capabilities. Evaluating large video models can be expensive, often requiring extensive fine-tuning on multiple benchmarks. Platonic alignment provides a cheap and fast alternative by simply comparing a video model's representations with a standard text model on a small held out set.
+            We can get a strong signal about its potential performance on a wide array of tasks, saving significant time and computational resources.</p>
         </div>
       </div>
     </div>
@@ -452,13 +566,16 @@
       <div class="column is-full-width">
         <h2 class="title is-3">Conclusion</h2>
         <div class="content has-text-justified">
-          <p>Our work is the first comprehensive study of emergent alignment between video and text representations. We've shown that the principles of the Platonic Representation Hypothesis extend to the dynamic world of video. Our key takeaways are:</p>
+          <p>Our work presents the first comprehensive study of emergent alignment between video and text representations, extending the Platonic Representation Hypothesis to the dynamic world of video. Our key takeaways are:</p>
           <ol>
             <li><strong>Test-time data matters:</strong> Richer visual and textual data at inference time significantly boosts alignment. This holds for both the number of video frames and the number of diverse captions.</li>
+            <li><strong>Temporal understanding is still developing:</strong> While dynamic inputs improve alignment, current models show only a minor sensitivity to temporal reordering of events, indicating significant room for growth in temporal reasoning.</li>
             <li><strong>Predictable scaling:</strong> This relationship follows predictable scaling laws, which can help in designing data collection and model evaluation strategies.</li>
             <li><strong>Alignment as a proxy for quality:</strong> Stronger alignment with text is a good indicator of a video model's general-purpose representation capabilities, across both semantic and geometric tasks.</li>
           </ol>
-          <p>Overall, we introduce video-text alignment as an informative, zero-shot way to probe the representation power of different encoders for spatio-temporal data. The temporal dimension in video appears to provide a powerful signal for grounding semantics, opening up exciting avenues for future research in multimodal learning.</p>
+          <p>Overall, we introduce video-text alignment as an informative, zero-shot way to probe the representation power of different encoders for spatio-temporal data. The temporal dimension in video appears to provide a powerful signal for grounding semantics, opening up exciting avenues for future research in multimodal learning and in developing more temporally-aware models.
+            An interesting direction for future work is to extend such analysis to generative and tracking models, as their representations aren't as easily accessible as general representations.
+          </p>
         </div>
       </div>
     </div>
@@ -470,13 +587,22 @@
       <h2 class="title">Related Literature</h2>
       <ol>
         <li id="huh2024platonic">
-            Minyoung Huh, Brian Cheung, Tongzhou Wang, and Phillip Isola. <i>The Platonic Representation Hypothesis.</i> In Proceedings of the 41st International Conference on Machine Learning, 2024.
+            Minyoung Huh, Brian Cheung, Tongzhou Wang, and Phillip Isola. <i>The Platonic Representation Hypothesis.</i> ICML 2024.
         </li>
         <li id="platoallegory">
             Plato. <i>Allegory of the Cave.</i> 375 BC.
         </li>
-        <li id="maniparambil2024vision">
-            Jishnu Maniparambil, Matthew Gwilliam, Puyuan Gu, Suraj Srinivas, Abhinav Shrivastava, and Sudeep Mallya. <i>Vision-Language Models are Zero-Shot Representation Aligners.</i> arXiv preprint arXiv:2402.19427, 2024.
+        <li id="vatex">
+            Xin Wang and Jiawei Wu and Junkun Chen and Lei Li and Yuan-Fang Wang and William Yang Wang. <i>VaTeX: A Large-Scale, High-Quality Multilingual Dataset for Video-and-Language Research.</i> ICCV 2019.
+        </li>
+        <li id="pvd">
+            Daniel Bolya et al, <i>Perception Encoder: The best visual embeddings are not at the output of the network.</i> arXiv preprint arXiv:2504.13181, 2025.
+        </li>
+        <li id="videocomp">
+            Dahun Kim et al, <i>VideoComp: Advancing Fine-Grained Compositional and Temporal Alignment in Video-Text Models</i>. CVPR 2025.
+        </li>
+        <li id="chinchilla">
+            Jordan Hoffman et al, <i>Training Compute-Optimal Large Language Models.</i> NeurIPS 2022.
         </li>
       </ol>
     </div>
